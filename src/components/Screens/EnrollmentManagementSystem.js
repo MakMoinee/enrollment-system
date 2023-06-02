@@ -222,7 +222,11 @@ const EnrollmentManagementSystem = ({ onLogout }) => {
 
   const handleLogout = () => {
     sessionStorage.clear();
-    onLogout();
+    // onLogout();
+    Swal.fire({
+      icon: "success",
+      title: "Successfully Logout",
+    });
     navigate("/");
   };
 
