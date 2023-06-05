@@ -11,12 +11,11 @@ import {
   Modal,
 } from "react-bootstrap";
 import Swal from "sweetalert2";
-import { format } from 'date-fns';
+import { format } from "date-fns";
 
 const EnrollmentManagementSystem = ({ onLogout }) => {
   const navigate = useNavigate();
   const [students, setStudents] = useState([]);
-  const [newStudent, setNewStudent] = useState([]);
   const [showEnrollModal, setShowEnrollModal] = useState(false);
   const [showUpdateModal, setShowUpdateModal] = useState(false);
   const [selectedStudentIndex, setSelectedStudentIndex] = useState(null);
@@ -26,6 +25,9 @@ const EnrollmentManagementSystem = ({ onLogout }) => {
   const [yearLevel, setYearLevel] = useState("");
   const [section, setSection] = useState("");
   const [enrolledDate, setEnrolledDate] = useState("");
+  const [subjects, setSubjects] = useState([]);
+  const [subjectModal, setSubjectModal] = useState(false);
+  const [selectedSubject, setSelectedSubject] = useState([]);
 
   useEffect(() => {
     fetch("http://localhost:3001/enrollment")
@@ -43,8 +45,23 @@ const EnrollmentManagementSystem = ({ onLogout }) => {
       });
   }, []);
 
+  useEffect(() => {
+    fetch("http://localhost:3001/subjects")
+      .then((response) => response.json())
+      .then((data) => {
+        setSubjects(data);
+      })
+      .catch((error) => {
+        console.error("Error fetching subjects:", error);
+      });
+  }, []);
+
   const handleEnrollModalOpen = () => {
     setShowEnrollModal(true);
+  };
+
+  const handleShowSubjects = () => {
+    navigate("/subjects");
   };
 
   const handleEnrollModalClose = () => {
@@ -59,7 +76,9 @@ const EnrollmentManagementSystem = ({ onLogout }) => {
     setCourse(selectedStudent.course);
     setYearLevel(selectedStudent.yearLevel);
     setSection(selectedStudent.section);
-    setEnrolledDate(format(new Date(selectedStudent.enrolledDate), 'yyyy-MM-dd'));
+    setEnrolledDate(
+      format(new Date(selectedStudent.enrolledDate), "yyyy-MM-dd")
+    );
     setShowUpdateModal(true);
   };
 
@@ -83,7 +102,6 @@ const EnrollmentManagementSystem = ({ onLogout }) => {
     })
       .then((response) => {
         if (response.ok) {
-          setNewStudent([]);
           Swal.fire({
             icon: "success",
             title: "Enrollment Successful",
@@ -120,6 +138,28 @@ const EnrollmentManagementSystem = ({ onLogout }) => {
         });
         console.error("Error enrolling student:", error);
       });
+  };
+
+  const handleSubjectModalClose = () => {
+    setSubjectModal(false);
+  };
+
+  const handleShowSubjectsModal = (index) => {
+    const tCourse = students[index].course;
+    const tYear = students[index].yearLevel;
+    console.log(tCourse);
+    console.log(tYear);
+    let subjectArr = [];
+    subjects.forEach((el) => {
+      if (el.course && el.yearLevel) {
+        if (el.course === tCourse && el.yearLevel === tYear) {
+          subjectArr.push(el);
+        }
+      }
+    });
+    console.log(subjectArr);
+    setSelectedSubject(subjectArr);
+    setSubjectModal(true);
   };
 
   const handleRemoveStudent = (index) => {
@@ -248,6 +288,15 @@ const EnrollmentManagementSystem = ({ onLogout }) => {
             >
               Add Enrollment
             </Button>
+
+            <Button
+              onClick={handleShowSubjects}
+              variant="primary"
+              className="ml-2"
+              style={{ marginLeft: "10px" }}
+            >
+              Subjects
+            </Button>
           </Form.Group>
         </Col>
       </Row>
@@ -273,8 +322,17 @@ const EnrollmentManagementSystem = ({ onLogout }) => {
                   <td>{student.course}</td>
                   <td>{student.yearLevel}</td>
                   <td>{student.section}</td>
-                  <td>{format(new Date(student.enrolledDate), 'yyyy-MM-dd')}</td>
                   <td>
+                    {format(new Date(student.enrolledDate), "yyyy-MM-dd")}
+                  </td>
+                  <td>
+                    <Button
+                      variant="primary"
+                      className="mr-2"
+                      onClick={() => handleShowSubjectsModal(index)}
+                    >
+                      Show Subjects
+                    </Button>
                     <Button
                       variant="primary"
                       className="mr-2"
@@ -313,21 +371,30 @@ const EnrollmentManagementSystem = ({ onLogout }) => {
           </Form.Group>
           <Form.Group controlId="formCourse">
             <Form.Label>Course</Form.Label>
-            <Form.Control
-              type="text"
-              placeholder="Enter Course"
+            <Form.Select
+              aria-label="Select Available Course"
               value={course}
               onChange={(e) => setCourse(e.target.value)}
-            />
+            >
+              <option value="">Select Available Course</option>
+              <option value="BSIT">BSIT</option>
+              <option value="BSBA">BSBA</option>
+            </Form.Select>
           </Form.Group>
           <Form.Group controlId="formYearLevel">
             <Form.Label>Year Level</Form.Label>
-            <Form.Control
-              type="text"
-              placeholder="Enter Year Level"
+            <Form.Select
+              aria-label="Select Year Level"
               value={yearLevel}
               onChange={(e) => setYearLevel(e.target.value)}
-            />
+            >
+              <option value="">Select Year Level</option>
+              <option value="1st Year">1st Year</option>
+              <option value="2nd Year">2nd Year</option>
+              <option value="3rd Year">3rd Year</option>
+              <option value="4th Year">4th Year</option>
+              <option value="5th Year">5th Year</option>
+            </Form.Select>
           </Form.Group>
           <Form.Group controlId="formSection">
             <Form.Label>Section</Form.Label>
@@ -394,12 +461,18 @@ const EnrollmentManagementSystem = ({ onLogout }) => {
           </Form.Group>
           <Form.Group controlId="formYearLevel">
             <Form.Label>Year Level</Form.Label>
-            <Form.Control
-              type="text"
-              placeholder="Enter Year Level"
+            <Form.Select
+              aria-label="Select Year Level"
               value={yearLevel}
               onChange={(e) => setYearLevel(e.target.value)}
-            />
+            >
+              <option value="">Select Year Level</option>
+              <option value="1st Year">1st Year</option>
+              <option value="2nd Year">2nd Year</option>
+              <option value="3rd Year">3rd Year</option>
+              <option value="4th Year">4th Year</option>
+              <option value="5th Year">5th Year</option>
+            </Form.Select>
           </Form.Group>
           <Form.Group controlId="formSection">
             <Form.Label>Section</Form.Label>
@@ -426,6 +499,48 @@ const EnrollmentManagementSystem = ({ onLogout }) => {
           </Button>
           <Button variant="primary" onClick={handleUpdateStudent}>
             Update
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* Subject Modal */}
+      <Modal show={subjectModal} onHide={handleSubjectModalClose}>
+        <Modal.Header>
+          <Modal.Title>Associated Subjects</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form.Group>
+            <Row className="mt-3">
+              <Col>
+                <Table striped bordered>
+                  <thead>
+                    <tr>
+                      <th>Subject Code</th>
+                      <th>Subject Description</th>
+                      <th>Units</th>
+                      <th>Course</th>
+                      <th>Year Level</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {selectedSubject.map((subject, index) => (
+                      <tr key={index}>
+                        <td>{subject.subjectCode}</td>
+                        <td>{subject.subjectDescription}</td>
+                        <td>{subject.subjectUnits}</td>
+                        <td>{subject.course}</td>
+                        <td>{subject.yearLevel}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </Table>
+              </Col>
+            </Row>
+          </Form.Group>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={handleSubjectModalClose}>
+            Close
           </Button>
         </Modal.Footer>
       </Modal>
