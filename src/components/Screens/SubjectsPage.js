@@ -23,6 +23,8 @@ function SubjectsPage({ logoutClick }) {
   const [yearLevel, setYearLevel] = useState("");
   const [deleteIndex, setDeleteIndex] = useState(-1);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showUpdateModal, setShowUpdateModal] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState(-1);
 
   useEffect(() => {
     fetch("http://localhost:3001/subjects")
@@ -62,7 +64,7 @@ function SubjectsPage({ logoutClick }) {
 
   const handleShowDeleteModal = () => {
     setShowDeleteModal(true);
-  }
+  };
 
   const handleDeleteModalClose = () => {
     setShowDeleteModal(false);
@@ -122,12 +124,12 @@ function SubjectsPage({ logoutClick }) {
       });
   };
 
-  const handleRemoveSubject = (index) =>{
+  const handleRemoveSubject = (index) => {
     setDeleteIndex(index);
     handleShowDeleteModal();
-  }
+  };
 
-  const handleDelete = () =>{
+  const handleDelete = () => {
     const subjectID = subjects[deleteIndex].subjectID;
     fetch(`http://localhost:3001/subjects/${subjectID}`, {
       method: "DELETE",
@@ -173,7 +175,78 @@ function SubjectsPage({ logoutClick }) {
         });
         console.error("Error removing Subject:", error);
       });
-  }
+  };
+
+  const handleShowUpdateModal = (index) => {
+    const selectedSubject = subjects[index];
+    setSelectedIndex(index);
+    setSubjectCode(selectedSubject.subjectCode);
+    setSubjectDesc(selectedSubject.subjectDescription);
+    setSubjectUnits(selectedSubject.subjectUnits);
+    setCourse(selectedSubject.course);
+    setYearLevel(selectedSubject.yearLevel);
+    setShowUpdateModal(true);
+  };
+
+  const handleUpdateModalClose = () => {
+    setShowUpdateModal(false);
+  };
+
+  const submitUpdateModal = () => {
+    const subjectID = subjects[selectedIndex].subjectID;
+    fetch(`http://localhost:3001/subjects/${subjectID}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        subjectCode,
+        subjectDesc,
+        subjectUnits,
+        course,
+        yearLevel,
+      }),
+    })
+      .then((response) => {
+        if (response.ok) {
+          setShowUpdateModal(false);
+          Swal.fire({
+            icon: "success",
+            title: "Update Successful",
+            text: "Subject record has been updated.",
+          });
+          return response.json();
+        } else {
+          throw new Error("Failed to update subject.");
+        }
+      })
+      .then((data) => {
+        setShowUpdateModal(false);
+        fetch("http://localhost:3001/subjects")
+          .then((response) => response.json())
+          .then((data) => {
+            setSubjects(data);
+          })
+          .catch((error) => {
+            Swal.fire({
+              icon: "error",
+              title: "Error Fetching Subjects",
+              text: "Failed to fetch subjects data. Please try again later.",
+            });
+            console.error("Error fetching subjects:", error);
+          });
+      })
+      .catch((error) => {
+        Swal.fire({
+          icon: "error",
+          title: "Update Error",
+          text: "Failed to update subject. Please try again later.",
+        });
+        console.error("Error updating subject:", error);
+      });
+  };
+
+
 
   return (
     <Container className="mt-5">
@@ -224,7 +297,7 @@ function SubjectsPage({ logoutClick }) {
                     <Button
                       variant="success"
                       className="mr-2"
-                      onClick={() => console.log("Primary")}
+                      onClick={() => handleShowUpdateModal(index)}
                     >
                       View/Update
                     </Button>
@@ -316,14 +389,84 @@ function SubjectsPage({ logoutClick }) {
         </Modal.Footer>
       </Modal>
 
+      {/* Update Modal */}
+      <Modal show={showUpdateModal} onHide={handleUpdateModalClose}>
+        <Modal.Title>Update Subject</Modal.Title>
+        <Modal.Body>
+          <Form.Group controlId="formSubjectCode">
+            <Form.Label>Subject Code</Form.Label>
+            <Form.Control
+              type="text"
+              placeholder="Enter Subject Code"
+              value={subjectCode}
+              onChange={(e) => setSubjectCode(e.target.value)}
+            />
+          </Form.Group>
+          <br />
+          <Form.Group controlId="formSubjectDescription">
+            <Form.Label>Subject Description</Form.Label>
+            <Form.Control
+              type="text"
+              placeholder="Enter Subject Description"
+              value={subjectDesc}
+              onChange={(e) => setSubjectDesc(e.target.value)}
+            />
+          </Form.Group>
+          <br />
+          <Form.Group controlId="formSubjectUnits">
+            <Form.Label>Units</Form.Label>
+            <Form.Control
+              type="number"
+              placeholder="Enter Units"
+              value={subjectUnits}
+              onChange={(e) => setSubjectUnits(e.target.value)}
+            />
+          </Form.Group>
+          <Form.Group controlId="formCourse">
+            <Form.Label>Course</Form.Label>
+            <Form.Select
+              aria-label="Select Available Course"
+              value={course}
+              onChange={(e) => setCourse(e.target.value)}
+            >
+              <option value="">Select Available Course</option>
+              <option value="BSIT">BSIT</option>
+              <option value="BSBA">BSBA</option>
+            </Form.Select>
+          </Form.Group>
+          <Form.Group controlId="formYearLevel">
+            <Form.Label>Year Level</Form.Label>
+            <Form.Select
+              aria-label="Select Year Level"
+              value={yearLevel}
+              onChange={(e) => setYearLevel(e.target.value)}
+            >
+              <option value="">Select Year Level</option>
+              <option value="1st Year">1st Year</option>
+              <option value="2nd Year">2nd Year</option>
+              <option value="3rd Year">3rd Year</option>
+              <option value="4th Year">4th Year</option>
+              <option value="5th Year">5th Year</option>
+            </Form.Select>
+          </Form.Group>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={handleUpdateModalClose}>
+            Close
+          </Button>
+          <Button variant="primary" onClick={submitUpdateModal}>
+            Update Subject
+          </Button>
+        </Modal.Footer>
+      </Modal>
       {/* Delete Modal */}
       <Modal show={showDeleteModal} onHide={handleDeleteModalClose}>
-            <Modal.Body>
-              <Form.Group controlId="formDeleteLabel">
-                <h3>Are You Sure You Want To Delete This Subject ?</h3>
-              </Form.Group>
-            </Modal.Body>
-            <Modal.Footer>
+        <Modal.Body>
+          <Form.Group controlId="formDeleteLabel">
+            <h3>Are You Sure You Want To Delete This Subject ?</h3>
+          </Form.Group>
+        </Modal.Body>
+        <Modal.Footer>
           <Button variant="secondary" onClick={handleDeleteModalClose}>
             Close
           </Button>
